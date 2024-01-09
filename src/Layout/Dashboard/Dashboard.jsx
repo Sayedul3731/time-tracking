@@ -12,6 +12,7 @@ import { MdDelete } from "react-icons/md";
 
 const Dashboard = () => {
     const { register, handleSubmit } = useForm();
+    const [currentId, setCurrentId] = useState('')
     const { user } = useContext(AuthContext);
     const [projects, refetch] = useProjects();
     console.log(projects);
@@ -42,20 +43,45 @@ const Dashboard = () => {
     const handleDelete = (id) => {
         console.log('click delete btn', id);
         axiosPublic.delete(`/projects/${id}`)
+            .then(res => {
+                console.log(res.data);
+                if (res.data.deletedCount > 0) {
+                    Swal.fire({
+                        title: "Success!",
+                        text: "Project Deleted Successfully.",
+                        icon: "success"
+                    });
+                    refetch()
+                }
+            })
+    }
+    const handleUpdateModal = (id) => {
+        setCurrentId(id)
+        document.getElementById('updateModal').showModal()
+    }
+    console.log(currentId);
+    const handleUpdate = (data) => {
+        console.log('click update btn',data);
+        const updateInfo = {
+            title: data?.title,
+            description: data?.description,
+            createdDate: data?.createdDate,
+            quality: data?.quality,
+            image: data?.photoURL
+        }
+        axiosPublic.patch(`/projects/${currentId}`, updateInfo)
         .then(res => {
             console.log(res.data);
-            if(res.data.deletedCount > 0){
+            if(res.data.modifiedCount > 0){
                 Swal.fire({
                     title: "Success!",
-                    text: "Project Deleted Successfully.",
+                    text: "Project Updated Successfully.",
                     icon: "success"
                 });
                 refetch()
             }
         })
-    }
-    const handleUpdate = (id) => {
-        console.log('click update btn', id);
+
     }
 
     const [time, setTime] = useState({ ms: 0, s: 0, m: 0, h: 0 });
@@ -110,13 +136,13 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ">
                     {
                         projects?.map(project => <div key={project._id} className="card bg-base-100 shadow-md">
-                            <figure><img src={project.image} alt="Shoes" /></figure>
+                            <figure><img src={project.image} alt="Project Picture" /></figure>
                             <div className="card-body">
                                 <h2 className="card-title">{project.title}</h2>
                                 <p>{project.description.length > 200 ? project.description.slice(0, 200) + "..." : project.description}</p>
                                 <div className="flex justify-end items-center">
                                     <div className="flex justify-center items-center gap-2">
-                                        <p onClick={() => handleUpdate(project._id)} className="text-xl cursor-pointer"> <FaEdit></FaEdit> </p>
+                                        <p onClick={() => handleUpdateModal(project._id)} className="text-xl cursor-pointer"> <FaEdit></FaEdit> </p>
                                         <p onClick={() => handleDelete(project._id)} className="text-2xl cursor-pointer"> <MdDelete></MdDelete> </p>
                                     </div>
                                 </div>
@@ -125,6 +151,38 @@ const Dashboard = () => {
                     }
                 </div>
             </div>
+
+            {/* Open the modal using document.getElementById('ID').showModal() method */}
+            <dialog id="updateModal" className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box bg-[#081c15]">
+                    <form onSubmit={handleSubmit(handleUpdate)} className="mx-4">
+                        <p>
+                            <input type='text' className='w-full my-4 px-3 py-1' placeholder='Title' {...register('title', { required: true })} />
+                        </p>
+                        <p>
+                            <input type='text' className='w-full my-4 px-3 py-1' placeholder='Description' {...register('description', { required: true })} />
+                        </p>
+                        <p>
+                            <input type='text' className='w-full my-4 px-3 py-1' placeholder='Project photoURL' {...register('photoURL', { required: false })} />
+                        </p>
+                        <p>
+                            <input type='date' className='w-full my-4 px-3 py-1' placeholder='CreatedDate' {...register('createdDate', { required: true })} />
+                        </p>
+                        <p>
+                            <input type='text' className='w-full my-4 px-3 py-1' placeholder='good/better/best' {...register('quality', { required: true })} />
+                        </p>
+                        <div className=" flex justify-center">
+                            <input type="submit" className="bg-[#e2711d] px-10 font-semibold text-white py-[8px] text-lg" />
+                        </div>
+                    </form>
+                    <div className="modal-action">
+                        <form method="dialog">
+                            {/* if there is a button in form, it will close the modal */}
+                            <button className="btn">Close</button>
+                        </form>
+                    </div>
+                </div>
+            </dialog>
             <Footer></Footer>
         </div>
     );
