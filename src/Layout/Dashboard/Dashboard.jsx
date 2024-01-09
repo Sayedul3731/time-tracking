@@ -61,7 +61,7 @@ const Dashboard = () => {
     }
     console.log(currentId);
     const handleUpdate = (data) => {
-        console.log('click update btn',data);
+        console.log('click update btn', data);
         const updateInfo = {
             title: data?.title,
             description: data?.description,
@@ -70,44 +70,75 @@ const Dashboard = () => {
             image: data?.photoURL
         }
         axiosPublic.patch(`/projects/${currentId}`, updateInfo)
-        .then(res => {
-            console.log(res.data);
-            if(res.data.modifiedCount > 0){
-                Swal.fire({
-                    title: "Success!",
-                    text: "Project Updated Successfully.",
-                    icon: "success"
-                });
-                refetch()
-            }
-        })
+            .then(res => {
+                console.log(res.data);
+                if (res.data.modifiedCount > 0) {
+                    Swal.fire({
+                        title: "Success!",
+                        text: "Project Updated Successfully.",
+                        icon: "success"
+                    });
+                    refetch()
+                }
+            })
 
     }
 
-    const [time, setTime] = useState({ ms: 0, s: 0, m: 0, h: 0 });
+    const [time, setTime] = useState({  s: 0, m: 0, h: 0 });
+    const [interV, setInterV] = useState();
+    const start = () => {
+        run();
+        setInterV(setInterval(run, 1000));
+    }
+    const stop = () => {
+        clearInterval(interV);
+    }
+    const resume = () => {
+        clearInterval(interV);
+        setTime({ s: 0, m: 0, h: 0 })
+    }
+
+    var updatedS = time.s, updatedM = time.m, updatedH = time.h;
+
+    const run = () => {
+        if (updatedM === 60) {
+            updatedH++;
+            updatedM = 0;
+        }
+        if (updatedS === 60) {
+            updatedM++;
+            updatedS = 0;
+        }
+        updatedS++;
+        return setTime({ s: updatedS, m: updatedM, h: updatedH });
+    }
 
     return (
         <div className="max-w-7xl mx-auto">
             <Navbar></Navbar>
 
             <div>
-                <div className="flex justify-center items-center">
-                    <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.h >= 10) ? time.h : "0" + time.h}</span>
-                    <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.m >= 10) ? time.m : "0" + time.m}</span>
-                    <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.s >= 10) ? time.s : "0" + time.s}</span>
-                    <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.ms >= 10) ? time.ms : "0" + time.ms}</span>
-                </div>
-                <div className="flex justify-center items-center my-5 text-white">
-                    <button className="border px-5 py-2">Start</button>
-                    <button className="border px-5 py-2 mx-2">Start</button>
-                    <button className="border px-5 py-2">Start</button>
-                </div>
+                <h1 className="text-4xl font-semibold text-white pl-4">Live Counter</h1>
             </div>
 
             <div className="min-h-[500px]">
                 <div className="my-10">
-                    <h1 className="text-2xl font-semibold pl-4 text-white">Create New Project Here</h1>
-                    <div className="my-5 min-h-[300px]">
+                    <div className=" flex justify-between">
+                        <div>  <h1 className="text-2xl font-semibold pl-4 text-white">Create New Project Here</h1></div>
+                        <div>
+                            <div className="flex justify-center items-center">
+                                <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.h >= 10) ? time.h : "0" + time.h} h</span>
+                                <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.m >= 10) ? time.m : "0" + time.m} m</span>
+                                <span className="bg-[#e2711d] px-5 py-2 mr-1 text-white">{(time.s >= 10) ? time.s : "0" + time.s} s</span>
+                            </div>
+                            <div className="flex justify-center items-center mt-4 text-white">
+                                <button onClick={start} className="border px-5 py-2">Start</button>
+                                <button onClick={stop} className="border px-5 py-2 mx-2">Pause</button>
+                                <button onClick={resume} className="border px-5 py-2">Resume</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mb-5 min-h-[300px]">
                         <form onSubmit={handleSubmit(handleNewProject)} className="mx-4">
                             <p>
                                 <input type='text' className='w-full my-4 px-3 py-1' placeholder='Title' {...register('title', { required: true })} />
@@ -124,6 +155,9 @@ const Dashboard = () => {
                             <p>
                                 <input type='text' className='w-full my-4 px-3 py-1' placeholder='good/better/best' {...register('quality', { required: true })} />
                             </p>
+                            <p>
+                                <input type='text' className='w-full my-4 px-3 py-1' placeholder='Total time (second)' {...register('time', { required: true })} />
+                            </p>
                             <div className=" flex justify-center">
                                 <input type="submit" className="bg-[#e2711d] px-10 font-semibold text-white py-[8px] text-lg" />
                             </div>
@@ -135,8 +169,10 @@ const Dashboard = () => {
                 <h1 className="text-5xl font-semibold text-center mb-10 text-white">My Projects</h1>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ">
                     {
-                        projects?.map(project => <div key={project._id} className="card bg-base-100 shadow-md">
-                            <figure><img src={project.image} alt="Project Picture" /></figure>
+                        projects?.map(project => <div key={project._id} className="rounded-md bg-base-100 shadow-md">
+                            <div className="h-[220px]">
+                                <figure><img src={project.image} alt="Project Picture" className="h-full w-full rounded-md " /></figure>
+                            </div>
                             <div className="card-body">
                                 <h2 className="card-title">{project.title}</h2>
                                 <p>{project.description.length > 200 ? project.description.slice(0, 200) + "..." : project.description}</p>
